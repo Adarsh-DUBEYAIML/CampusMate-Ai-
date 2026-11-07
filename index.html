@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusMate - Auth</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; display: grid; place-items: center; min-height: 100vh; padding: 24px 16px; background: radial-gradient(ellipse at 50% 20%, #effbd9 0, #c5eaa3 52%, #a4d887 100%); margin: 0; overflow-x: hidden; }
+        .login-scene { position: relative; width: min(100%, 380px); padding-top: 138px; perspective: 1000px; }
+        .cartoon-stage { position: absolute; z-index: 1; inset: 0 0 auto; height: 184px; pointer-events: none; }
+        .scene-art { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+        .walker { transform-box: view-box; transform: translateX(-195px); animation: walk-in 1.2s .1s cubic-bezier(.22,.75,.28,1) forwards; }
+        .leg-back, .leg-front { transform-box: fill-box; transform-origin: top center; }
+        .leg-back { animation: walk-back .95s .15s ease-in-out both; }
+        .leg-front { animation: walk-front .95s .15s ease-in-out both; }
+        .arm { transform-box: view-box; transform-origin: 180px 84px; }
+        .arm-left { animation: reach-left .5s 1.2s ease-out both; }
+        .arm-right { transform-origin: 205px 84px; animation: reach-right .5s 1.2s ease-out both; }
+        .box-flap-left { transform-box: view-box; transform-origin: 124px 112px; animation: flap-left .55s 1.7s cubic-bezier(.2,.8,.3,1) forwards; }
+        .box-flap-right { transform-box: view-box; transform-origin: 256px 112px; animation: flap-right .55s 1.7s cubic-bezier(.2,.8,.3,1) forwards; }
+        .card { position: relative; z-index: 2; margin: 0 auto; padding: 30px; border: 1px solid #ffffffa8; border-radius: 22px; background: linear-gradient(145deg, #fff8e9, #ffe6ce); box-shadow: 0 28px 65px #31552e35, 0 5px 14px #77502a22, inset 0 1px #fff; text-align: center; width: 100%; opacity: 0; transform: translateY(-8px) scale(.58); transform-origin: 50% 0; animation: lift-and-place 1.75s 2.2s cubic-bezier(.2,.75,.25,1) forwards; }
+        .card h2 { margin: 0 0 18px; color: #235b3c; font-size: 28px; letter-spacing: .3px; }
+        input, button { width: 100%; padding: 12px 13px; margin: 8px 0; border-radius: 10px; box-sizing: border-box; }
+        input { border: 1px solid #d8dece; background: #ffffffdf; color: #254936; transition: border-color .2s, box-shadow .2s, background .2s; }
+        input:focus { outline: none; border-color: #39875a; background: #fff; box-shadow: 0 0 0 4px #39875a22; }
+        button { background: linear-gradient(135deg, #39875a, #246b49); color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 5px 12px #286b4933; transition: transform .2s, box-shadow .2s, filter .2s; }
+        button:hover { filter: brightness(1.08); transform: translateY(-2px); box-shadow: 0 8px 16px #286b4944; }
+        button:active { transform: translateY(0) scale(.99); }
+        .toggle { color: #276c48; cursor: pointer; font-size: 14px; margin-top: 13px; }
+        .toggle:hover { text-decoration: underline; }
+        @keyframes walk-in {
+            0% { opacity: 0; transform: translateX(-195px); }
+            8% { opacity: 1; }
+            24% { transform: translateX(-150px); }
+            41% { transform: translateX(-112px); }
+            58% { transform: translateX(-68px); }
+            76% { transform: translateX(-28px); }
+            91%, 100% { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes walk-back { 0%, 20%, 40%, 60%, 80% { transform: rotate(13deg); } 10%, 30%, 50%, 70%, 90% { transform: rotate(-13deg); } 100% { transform: rotate(0); } }
+        @keyframes walk-front { 0%, 20%, 40%, 60%, 80% { transform: rotate(-13deg); } 10%, 30%, 50%, 70%, 90% { transform: rotate(13deg); } 100% { transform: rotate(0); } }
+        @keyframes reach-left { to { transform: rotate(-24deg) translate(-4px, -2px); } }
+        @keyframes reach-right { to { transform: rotate(24deg) translate(4px, -2px); } }
+        @keyframes flap-left { to { transform: rotate(-62deg); } }
+        @keyframes flap-right { to { transform: rotate(62deg); } }
+        @keyframes lift-and-place {
+            0% { opacity: 0; transform: translateY(-8px) scale(.58); }
+            18% { opacity: 1; transform: translateY(-8px) scale(.58); }
+            46% { opacity: 1; transform: translateY(-108px) scale(.73); }
+            63% { opacity: 1; transform: translateY(-108px) scale(.73); }
+            83% { opacity: 1; transform: translateY(8px) scale(1.015); }
+            92% { transform: translateY(-3px) scale(1); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; }
+            .walker, .card { opacity: 1; transform: none; }
+            .box-flap-left { transform: rotate(-62deg); }
+            .box-flap-right { transform: rotate(62deg); }
+        }
+        @media (max-width: 380px) { .card { padding: 24px 20px; } }
+        body { min-height: 100svh; padding: 30px 20px; background: radial-gradient(ellipse at 12% 8%, #f5ffe8 0, transparent 38%), radial-gradient(ellipse at 90% 90%, #d5f1bc 0, transparent 36%), #eaf5e2; color: #203b2d; }
+        .auth-shell { width: min(100%, 1020px); min-height: 620px; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; border: 1px solid #ffffffc9; border-radius: 30px; background: #fff; box-shadow: 0 34px 90px #264e3024, 0 8px 24px #264e3015; }
+        .welcome-panel { position: relative; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; padding: 42px; color: #fff; background: radial-gradient(ellipse at 85% 15%, #ffffff24, transparent 35%), linear-gradient(150deg, #2b7950, #1d583d); }
+        .welcome-panel::before, .welcome-panel::after { position: absolute; content: ""; border: 1px solid #ffffff20; border-radius: 50%; pointer-events: none; }
+        .welcome-panel::before { width: 360px; height: 360px; right: -160px; top: 110px; }
+        .welcome-panel::after { width: 260px; height: 260px; right: -108px; top: 160px; }
+        .welcome-brand, .welcome-copy, .welcome-footer { position: relative; z-index: 1; }
+        .welcome-brand { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 750; letter-spacing: .2px; }
+        .welcome-logo { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid #ffffff30; border-radius: 15px; background: #ffffff1b; font-size: 23px; }
+        .welcome-copy { margin: auto 0; padding: 44px 0; }
+        .welcome-kicker { display: inline-flex; align-items: center; gap: 8px; padding: 7px 11px; border: 1px solid #ffffff35; border-radius: 999px; background: #ffffff12; color: #e1f4df; font-size: 12px; font-weight: 700; letter-spacing: .4px; }
+        .welcome-copy h1 { max-width: 390px; margin: 20px 0 14px; font-size: clamp(34px, 4.2vw, 49px); line-height: 1.08; letter-spacing: -1.5px; }
+        .welcome-copy p { max-width: 360px; margin: 0; color: #e0efe4; font-size: 16px; line-height: 1.7; }
+        .welcome-points { display: grid; gap: 13px; margin-top: 27px; color: #eff8ef; font-size: 14px; }
+        .welcome-points span { display: flex; align-items: center; gap: 10px; }
+        .welcome-check { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #ffffff20; font-size: 12px; }
+        .welcome-footer { color: #d4e8d7; font-size: 12px; }
+        .auth-content { display: grid; place-items: center; padding: 34px 36px; }
+        .login-scene { width: min(100%, 405px); padding-top: 138px; }
+        .cartoon-stage { height: 184px; }
+        .card { padding: 30px; border: 1px solid #e9eee4; border-radius: 24px; background: #fff; box-shadow: 0 20px 48px #264e3018, 0 4px 14px #264e300b; text-align: left; }
+        .auth-heading { margin-bottom: 24px; }
+        .auth-heading h2 { margin: 0 0 7px; color: #203b2d; font-size: 27px; letter-spacing: -.5px; }
+        .auth-heading p { margin: 0; color: #748379; font-size: 14px; line-height: 1.55; }
+        .auth-field { display: grid; gap: 7px; margin: 16px 0; }
+        .auth-field label { color: #395343; font-size: 13px; font-weight: 700; }
+        .auth-field input { width: 100%; height: 48px; margin: 0; padding: 0 14px; border: 1px solid #dfe8df; border-radius: 12px; background: #fbfdf9; color: #203b2d; font-size: 14px; }
+        .auth-field input::placeholder { color: #a0aca3; }
+        .auth-field input:focus { outline: none; border-color: #39875a; background: #fff; box-shadow: 0 0 0 4px #39875a18; }
+        .password-wrap { display: flex; align-items: center; border: 1px solid #dfe8df; border-radius: 12px; background: #fbfdf9; transition: border-color .2s, box-shadow .2s; }
+        .password-wrap:focus-within { border-color: #39875a; background: #fff; box-shadow: 0 0 0 4px #39875a18; }
+        .auth-field .password-wrap input { flex: 1; min-width: 0; border: 0; background: transparent; box-shadow: none; }
+        .password-toggle { width: auto; flex: 0 0 auto; margin: 0 6px 0 0; padding: 8px 10px; border: 0; background: transparent; box-shadow: none; color: #51735e; font-size: 12px; }
+        .password-toggle:hover { transform: none; box-shadow: none; background: #edf5ec; filter: none; }
+        .submit-button { height: 49px; margin: 12px 0 0; border-radius: 12px; font-size: 15px; letter-spacing: .15px; }
+        .submit-button:disabled { cursor: wait; opacity: .7; transform: none; }
+        .auth-status { min-height: 20px; margin: 12px 0 0; color: #a33c35; font-size: 13px; line-height: 1.5; }
+        .auth-switch { margin-top: 13px; color: #748379; text-align: center; font-size: 13px; }
+        .auth-switch button { width: auto; margin: 0 0 0 3px; padding: 4px; border: 0; background: transparent; box-shadow: none; color: #24784d; font-size: inherit; }
+        .auth-switch button:hover { transform: none; box-shadow: none; background: transparent; color: #195e3a; text-decoration: underline; }
+        @media (max-width: 760px) {
+            body { padding: 18px 14px; }
+            .auth-shell { width: min(100%, 500px); min-height: 0; grid-template-columns: 1fr; border-radius: 24px; }
+            .welcome-panel { min-height: 230px; padding: 24px 26px; }
+            .welcome-copy { padding: 28px 0 8px; }
+            .welcome-copy h1 { max-width: 420px; margin: 14px 0 9px; font-size: clamp(29px, 8vw, 38px); }
+            .welcome-copy p { font-size: 14px; }
+            .welcome-points { display: none; }
+            .welcome-footer { display: none; }
+            .auth-content { padding: 4px 22px 26px; }
+            .login-scene { padding-top: 126px; }
+            .cartoon-stage { height: 172px; }
+        }
+        @media (max-width: 380px) { .welcome-panel { padding: 22px; } .auth-content { padding: 0 14px 20px; } .card { padding: 24px 20px; } }
+    </style>
+</head>
+<body>
+    <main class="auth-shell">
+      <section class="welcome-panel" aria-label="Welcome to CampusMate">
+        <div class="welcome-brand"><span class="welcome-logo" aria-hidden="true">🌿</span><span>CampusMate <span style="color:#c7edb8">AI</span></span></div>
+        <div class="welcome-copy">
+          <span class="welcome-kicker"><span aria-hidden="true">✦</span> YOUR CALMER CAMPUS COMPANION</span>
+          <h1>Make room for what matters.</h1>
+          <p>Keep assignments, study files and deadlines together—so you can focus on one step at a time.</p>
+          <div class="welcome-points">
+            <span><span class="welcome-check" aria-hidden="true">✓</span> Keep track of assignments and due dates</span>
+            <span><span class="welcome-check" aria-hidden="true">✓</span> Keep your study files close at hand</span>
+            <span><span class="welcome-check" aria-hidden="true">✓</span> Build a calmer study routine</span>
+          </div>
+        </div>
+        <div class="welcome-footer">Small steps today. Big dreams tomorrow. 🌱</div>
+      </section>
+      <section class="auth-content" aria-label="Sign in to CampusMate">
+       <div class="login-scene">
+        <div class="cartoon-stage" aria-hidden="true">
+            <svg class="scene-art" viewBox="0 0 380 184" role="presentation">
+                <defs>
+                    <linearGradient id="boxFront" x2="0" y2="1"><stop stop-color="#e6ae70"/><stop offset="1" stop-color="#c9864d"/></linearGradient>
+                    <linearGradient id="shirt" x2="0" y2="1"><stop stop-color="#53a66f"/><stop offset="1" stop-color="#28724c"/></linearGradient>
+                    <linearGradient id="lid" x2="0" y2="1"><stop stop-color="#f0c18a"/><stop offset="1" stop-color="#d99a5c"/></linearGradient>
+                </defs>
+                <ellipse cx="190" cy="174" rx="93" ry="8" fill="#385c3020"/>
+                <g class="walker">
+                    <path d="M175 124 L169 158 Q167 165 174 167 L184 167 L192 134 Z" fill="#315c49" class="leg-back"/>
+                    <path d="M199 125 L205 157 Q207 164 200 167 L191 167 L186 135 Z" fill="#426f56" class="leg-front"/>
+                    <path d="M168 163 Q168 159 174 160 L184 163 Q188 165 185 169 L169 170 Q164 169 168 163Z" fill="#f6f1dc"/>
+                    <path d="M189 164 Q190 160 196 161 L207 164 Q211 167 207 170 L191 170 Q187 168 189 164Z" fill="#f6f1dc"/>
+                    <path d="M162 80 Q190 69 218 81 L224 126 Q191 138 157 126Z" fill="url(#shirt)" stroke="#246641" stroke-width="2"/>
+                    <path d="M179 78 Q190 84 201 78 L198 103 L190 110 L182 103Z" fill="#f4bd83"/>
+                    <path d="M164 84 Q150 91 143 104" fill="none" stroke="#28724c" stroke-width="15" stroke-linecap="round"/>
+                    <path class="arm arm-left" d="M164 84 Q149 91 136 105" fill="none" stroke="#f1b47c" stroke-width="10" stroke-linecap="round"/>
+                    <path d="M216 84 Q231 91 239 105" fill="none" stroke="#28724c" stroke-width="15" stroke-linecap="round"/>
+                    <path class="arm arm-right" d="M216 84 Q231 91 244 105" fill="none" stroke="#f1b47c" stroke-width="10" stroke-linecap="round"/>
+                    <circle cx="136" cy="105" r="7" fill="#f1b47c"/>
+                    <circle cx="244" cy="105" r="7" fill="#f1b47c"/>
+                    <path d="M168 50 Q167 25 190 24 Q215 25 213 53 L209 69 Q202 82 190 82 Q177 81 170 68Z" fill="#f1b47c" stroke="#c77e4f" stroke-width="2"/>
+                    <path d="M166 52 Q161 35 170 25 Q176 12 195 16 Q214 17 218 34 L213 51 Q209 43 202 38 Q190 43 174 40Z" fill="#3b302b"/>
+                    <path d="M175 49 Q179 46 183 49 M198 49 Q202 46 206 49" fill="none" stroke="#44352c" stroke-width="2.5" stroke-linecap="round"/>
+                    <ellipse cx="180" cy="55" rx="2" ry="3" fill="#354537"/>
+                    <ellipse cx="201" cy="55" rx="2" ry="3" fill="#354537"/>
+                    <path d="M185 66 Q191 71 197 65" fill="none" stroke="#a6534a" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="174" cy="62" r="4" fill="#e98f79" opacity=".55"/>
+                    <circle cx="207" cy="62" r="4" fill="#e98f79" opacity=".55"/>
+                </g>
+                <g>
+                    <path d="M124 112 L190 92 L256 112 L190 132Z" fill="#f4c98d" stroke="#a96538" stroke-width="3"/>
+                    <path d="M124 112 L190 132 L190 177 L124 157Z" fill="url(#boxFront)" stroke="#a96538" stroke-width="3"/>
+                    <path d="M190 132 L256 112 L256 157 L190 177Z" fill="#d99a5c" stroke="#a96538" stroke-width="3"/>
+                    <path d="M177 100 L190 96 L203 100 L203 169 L190 173 L177 169Z" fill="#f4d58c" opacity=".9"/>
+                    <path class="box-flap-left" d="M124 112 L124 100 L190 82 L190 94Z" fill="url(#lid)" stroke="#a96538" stroke-width="3" stroke-linejoin="round"/>
+                    <path class="box-flap-right" d="M190 94 L190 82 L256 100 L256 112Z" fill="url(#lid)" stroke="#a96538" stroke-width="3" stroke-linejoin="round"/>
+                    <path d="M141 121 L141 151 M239 121 L239 151" stroke="#b97846" stroke-width="2" opacity=".5"/>
+                </g>
+            </svg>
+        </div>
+        <div class="card">
+          <div class="auth-heading">
+            <h2 id="title">Welcome back</h2>
+            <p id="authSubtitle">Sign in to pick up where you left off.</p>
+          </div>
+          <form id="authForm">
+            <div class="auth-field">
+              <label for="email">Email address</label>
+              <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required>
+            </div>
+            <div class="auth-field">
+              <label for="password">Password</label>
+              <div class="password-wrap">
+                <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" minlength="6" required>
+                <button class="password-toggle" type="button" id="passwordToggle" aria-label="Show password" aria-pressed="false">Show</button>
+              </div>
+            </div>
+            <button class="submit-button" id="btn" type="submit">Sign in</button>
+            <p class="auth-status" id="authStatus" role="status" aria-live="polite"></p>
+          </form>
+          <div class="auth-switch"><span id="switchPrompt">New to CampusMate?</span><button type="button" id="toggle">Create an account</button></div>
+        </div>
+       </div>
+      </section>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // Your Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-LJZ1T6jhwZVLu7L85KtDO2Fiq-J9_hQ", // <-- Apni API Key yahan dalein
+            authDomain: "campusmate-78a20.firebaseapp.com",
+            projectId: "campusmate-78a20",
+            storageBucket: "campusmate-78a20.firebasestorage.app",
+            messagingSenderId: "68798884423",
+            appId: "1:68798884423:web:7929b3723d2e3feb869f62" // <-- Apni App ID yahan dalein
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        let isLogin = true;
+
+        const title = document.getElementById("title");
+        const btn = document.getElementById("btn");
+        const toggle = document.getElementById("toggle");
+        const form = document.getElementById("authForm");
+        const password = document.getElementById("password");
+        const passwordToggle = document.getElementById("passwordToggle");
+        const authStatus = document.getElementById("authStatus");
+
+        toggle.addEventListener("click", () => {
+            isLogin = !isLogin;
+            title.innerText = isLogin ? "Welcome back" : "Create your account";
+            document.getElementById("authSubtitle").innerText = isLogin
+                ? "Sign in to pick up where you left off."
+                : "Start organizing your campus life, one step at a time.";
+            btn.innerText = isLogin ? "Sign in" : "Create account";
+            document.getElementById("switchPrompt").innerText = isLogin ? "New to CampusMate?" : "Already have an account?";
+            toggle.innerText = isLogin ? "Create an account" : "Sign in";
+            password.autocomplete = isLogin ? "current-password" : "new-password";
+            authStatus.textContent = "";
+        });
+
+        passwordToggle.addEventListener("click", () => {
+            const showPassword = password.type === "password";
+            password.type = showPassword ? "text" : "password";
+            passwordToggle.innerText = showPassword ? "Hide" : "Show";
+            passwordToggle.setAttribute("aria-label", showPassword ? "Hide password" : "Show password");
+            passwordToggle.setAttribute("aria-pressed", String(showPassword));
+        });
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            btn.disabled = true;
+            btn.innerText = isLogin ? "Signing in…" : "Creating account…";
+            authStatus.textContent = "";
+            try {
+                const email = document.getElementById("email").value.trim().toLowerCase();
+                if (isLogin) {
+                    await signInWithEmailAndPassword(auth, email, password.value);
+                } else {
+                    await createUserWithEmailAndPassword(auth, email, password.value);
+                }
+                window.location.href = "Dashboard.html";
+            } catch (e) {
+                console.error("Authentication failed", e);
+                const messages = {
+                    "auth/invalid-credential": "Email or password is incorrect. Please try again.",
+                    "auth/user-not-found": "We couldn't find an account with that email. Create an account to get started.",
+                    "auth/wrong-password": "Email or password is incorrect. Please try again.",
+                    "auth/email-already-in-use": "An account with this email already exists. Try signing in instead.",
+                    "auth/invalid-email": "Please enter a valid email address.",
+                    "auth/weak-password": "Choose a stronger password with at least 6 characters.",
+                    "auth/network-request-failed": "We couldn't connect. Check your internet connection and try again.",
+                    "auth/too-many-requests": "Too many attempts. Please wait a little while and try again."
+                };
+                authStatus.textContent = messages[e.code] || "We couldn't sign you in right now. Please try again.";
+                btn.disabled = false;
+                btn.innerText = isLogin ? "Sign in" : "Create account";
+            }
+        });
+    </script>
+</body>
+</html>
